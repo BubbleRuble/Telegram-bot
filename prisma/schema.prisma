@@ -7,13 +7,26 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  name      String
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+enum AppRole {
+  USER
+  MANAGER
+  ADMIN
+}
 
-  @@map("users")
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String?
+  role         AppRole  @default(USER)
+  isActive     Boolean  @default(true)
+  lastLoginAt  DateTime?
+  lastLogoutAt DateTime?
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+
+  @@index([role])
+  @@index([isActive])
 }

@@ -7,7 +7,7 @@ export class PrismaService
   extends PrismaClient
   implements OnModuleInit, OnModuleDestroy
 {
-  private conected = false;
+  private connected = false;
   constructor(private readonly configService: ConfigService) {
     const env = (
       configService.get<string>('NODE_ENV') || 'development'

@@ -5,7 +5,7 @@ import { UsersService } from 'src/users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import { SignInDto } from 'src/dto/sign-in.dto';
 import { User } from '@prisma/client';
-import { RefreshTokensService } from './refresh-tokens.service';
+import { RefreshTokensService } from './refresh-tokens.service'
 
 @Injectable()
 export class AuthService {
