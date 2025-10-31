@@ -7,6 +7,17 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum UserStatus {
+  ACTIVE
+  LEFT
+  BANNED
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
 enum AppRole {
   USER
   MANAGER
@@ -29,4 +40,65 @@ model User {
 
   @@index([role])
   @@index([isActive])
+
+  refreshTokens RefreshToken[]
+}
+
+model TelegramUser {
+  id        BigInt     @id 
+  username  String?    @unique
+  joinedAt  DateTime   @default(now())
+  status    UserStatus @default(ACTIVE)
+  role      UserRole   @default(USER)
+  isActive  Boolean    @default(true)
+  lastActiveAt DateTime @default(now())
+  deactivatedAt DateTime?
+
+  isBlocked   Boolean   @default(false)
+  blockedAt   DateTime?
+  unblockedAt DateTime?
+  blockedReason String?
+
+  sessions  TelegramSession[]
+
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@index([username])
+  @@index([isActive, updatedAt])
+  @@index([status])
+  @@index([isBlocked])
+}
+
+model TelegramSession {
+  id               BigInt   @id @default(autoincrement())
+  userId           BigInt
+  chatId           BigInt
+  language         String?  @db.VarChar(10)
+  preferences      Json?
+  lastInteractionAt DateTime @default(now())
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user TelegramUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, chatId], name: "user_chat_unique")
+  @@index([chatId])
+}
+
+model RefreshToken {
+  id          String   @id @default(cuid())
+  userId      String
+  hashedToken String   @unique
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  createdAt   DateTime @default(now())
+  userAgent   String?
+  ip          String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
 }

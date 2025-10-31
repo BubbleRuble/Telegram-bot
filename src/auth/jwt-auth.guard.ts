@@ -51,7 +51,7 @@ export class JwtAuthGuard implements CanActivate {
         if (user?.lastLogoutAt && iatSec) {
           const iatMs = iatSec * 1000;
           if (iatMs < new Date(user.lastLogoutAt).getTime()) {
-            throw new UnauthorizedException('Token revoked');
+            throw new UnauthorizedException('Token expired');
           }
         }
       }
@@ -66,7 +66,7 @@ export class JwtAuthGuard implements CanActivate {
     if (!requiredRoles || requiredRoles.length === 0) return true;
     const user = request.user;
     if (!user?.role || !requiredRoles.includes(user.role)) {
-      throw new ForbiddenException('Insufficient role');
+      throw new ForbiddenException('Role not permitted');
     }
     return true;
   }

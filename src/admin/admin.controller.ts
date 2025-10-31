@@ -1,13 +1,16 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Prisma } from '@prisma/client';
+import { UsersService } from 'src/users/users.service';
 import { PaginationQueryDto } from 'src/dto/pagination.dto';
 
 @Controller('admin')
 @UseGuards(JwtAuthGuard)
 export class AdminController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService,
+    private readonly users: UsersService,
+  ) {}
 
   @Get('stats')
   async getStats() {
@@ -25,6 +28,11 @@ export class AdminController {
         blocked: tgBlocked,
       },
     };
+  }
+
+  @Get('user/:id')
+  async getUserById(@Param('id') id: string) {
+    return this.users.findById(id)
   }
 
   @Get('telegram-users')
