@@ -1,8 +1,14 @@
-import { INestApplication, Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
+import {
+  INestApplication,
+  Injectable,
+  Logger,
+  OnModuleDestroy,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { TelegramSessionService } from 'src/sessions/telegram-sessions.service';
 import { TelegramUserService } from 'src/users/telegram-user.service';
-import { Context, Telegraf } from 'telegraf';
+import { Context, Telegraf} from 'telegraf';
+import { BOT_COMMANDS, registerBotCommands } from './bot.commands';
 
 @Injectable()
 export class BotService implements OnModuleDestroy {
@@ -16,6 +22,7 @@ export class BotService implements OnModuleDestroy {
     private readonly telegramSessionService: TelegramSessionService,
   ) {
     const token = this.configService.get('TELEGRAM_BOT_TOKEN');
+    console.log('TELEGRAM_BOT_TOKEN:', token);
     if (!token) {
       this.logger.warn(
         'TELEGRAM_BOT_TOKEN (or BOT_TOKEN) not set. Bot is disabled.',
@@ -25,7 +32,10 @@ export class BotService implements OnModuleDestroy {
 
     this.bot = new Telegraf(token as string);
 
+    registerBotCommands(this.bot);
+
     this.bot.use((ctx, next) => {
+      this.logger.log(`Update received from chat: ${ctx.chat?.id}`);
       void this.telegramUserService
         .upsertFromContext(ctx)
         .then((user) =>
@@ -33,29 +43,16 @@ export class BotService implements OnModuleDestroy {
             ctx,
             user ? (user.id as unknown as bigint) : undefined,
           ),
-        ).catch((error) => {
-          this.logger.debug(`Session upsert failed: ${String(error)}`)
+        )
+        .catch((error) => {
+          this.logger.debug(`Session upsert failed: ${String(error)}`);
         });
-        return next();
-    });
-
-    this.bot.start(async (ctx) => {
-      await ctx.reply('Hello! I am your Telegram bot.');
-    });
-
-    this.bot.hears(/ronaldo/i, async (ctx) => {
-      await ctx.reply('SIUUUUUU');
-    });
-
-    this.bot.command('help', async (ctx) => {
-      const lines = this.getCommands()
-        .map((c) => `/${c.command} - ${c.description}`)
-        .join('\n');
-      await ctx.reply(`Available commands:\n${lines}`);
+      return next();
     });
 
     this.bot.command('lang', async (ctx) => {
-      const text = (ctx.message && 'text' in ctx.message ? ctx.message.text : '') || '';
+      const text =
+        (ctx.message && 'text' in ctx.message ? ctx.message.text : '') || '';
       const [codeRaw] = text.split(/\s+/, 2);
       const code = (codeRaw || '').trim();
       const fromId = ctx.from?.id;
@@ -79,8 +76,9 @@ export class BotService implements OnModuleDestroy {
 
   async init(app: INestApplication) {
     if (!this.bot) {
-      return; 
+      return;
     }
+    await this.bot.telegram.setMyCommands(BOT_COMMANDS);
 
     const env = (
       process.env.NODE_ENV ||
@@ -144,9 +142,7 @@ export class BotService implements OnModuleDestroy {
     } else {
       try {
         await this.bot.telegram.deleteWebhook();
-      } catch {
-        
-      }
+      } catch {}
     }
   }
 
@@ -158,8 +154,13 @@ export class BotService implements OnModuleDestroy {
     return [
       { command: 'start', description: 'Start the bot' },
       { command: 'help', description: 'Show available commands' },
-      { command: 'ping', description: 'Check bot responsiveness' },
+      { command: 'ronaldo', description: 'Check bot football knowlenge' },
+      { command: 'messi', description: 'Check bot knowlenge' },
+      { command: 'roll', description: 'Roll the cube' },
       { command: 'lang', description: 'Set language, e.g. /lang en' },
+      { command: 'gayness', description: 'Check your gayness percentage' },
+      { command: 'about', description: 'Info about bot ' },
+      { command: 'inline_menu', description: 'Show interactive inline menu' }, 
     ];
   }
 }

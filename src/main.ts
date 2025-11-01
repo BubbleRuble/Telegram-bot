@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
+import { BotService } from './bot/bot.service';
 import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
@@ -22,6 +23,8 @@ async function bootstrap() {
   );
 
 
+  const botService = app.get(BotService);
   await app.listen(process.env.PORT ?? 3000);
+  await botService.init(app);
 }
-bootstrap();
+void bootstrap();
