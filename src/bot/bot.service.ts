@@ -7,9 +7,8 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { TelegramSessionService } from 'src/sessions/telegram-sessions.service';
 import { TelegramUserService } from 'src/users/telegram-user.service';
-import { Context, Telegraf, Markup, MiddlewareFn} from 'telegraf';
+import { Context, Telegraf} from 'telegraf';
 import { BOT_COMMANDS, BotCommandsService } from './bot.commands';
-import { UserRole } from '@prisma/client';
 
 
 @Injectable()
@@ -50,7 +49,7 @@ export class BotService implements OnModuleDestroy {
         });
       return next();
     });
-    
+
     this.botCommands.register(this.bot); 
 
     this.bot.command('lang', async (ctx) => {

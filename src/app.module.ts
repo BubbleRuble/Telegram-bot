@@ -7,17 +7,16 @@ import { UsersModule } from './users/users.module';
 import { AdminModule } from './admin/admin.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
-import { BotService } from './bot/bot.service';
 import { TelegramUserService } from './users/telegram-user.service';
 import { TelegramSessionService } from './sessions/telegram-sessions.service';
-import { BotCommandsService } from './bot/bot.commands';
+import { BotModule } from './bot/bot.module';
 
 
 @Module({
   imports: [ConfigModule.forRoot({
       isGlobal: true, 
-    }), AuthModule, UsersModule, AdminModule, PrismaModule],
+    }), AuthModule, UsersModule, AdminModule, PrismaModule, BotModule],
   controllers: [AppController],
-  providers: [AppService, JwtAuthGuard, BotService, BotCommandsService, TelegramUserService, TelegramSessionService,],
+  providers: [AppService, JwtAuthGuard, TelegramUserService, TelegramSessionService,],
 })
 export class AppModule {}
