@@ -10,6 +10,7 @@ import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { BotService } from './bot/bot.service';
 import { TelegramUserService } from './users/telegram-user.service';
 import { TelegramSessionService } from './sessions/telegram-sessions.service';
+import { BotCommandsService } from './bot/bot.commands';
 
 
 @Module({
@@ -17,6 +18,6 @@ import { TelegramSessionService } from './sessions/telegram-sessions.service';
       isGlobal: true, 
     }), AuthModule, UsersModule, AdminModule, PrismaModule],
   controllers: [AppController],
-  providers: [AppService, JwtAuthGuard, BotService, TelegramUserService, TelegramSessionService,],
+  providers: [AppService, JwtAuthGuard, BotService, BotCommandsService, TelegramUserService, TelegramSessionService,],
 })
 export class AppModule {}

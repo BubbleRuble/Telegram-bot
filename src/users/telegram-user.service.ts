@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Context } from 'telegraf';
 import { PrismaService } from '../prisma/prisma.service';
-import { UserRole, UserStatus } from '@prisma/client';
+import { Prisma, UserRole, UserStatus, TelegramUser } from '@prisma/client';
 
 @Injectable()
 export class TelegramUserService {
@@ -9,11 +9,18 @@ export class TelegramUserService {
 
   constructor(private readonly prisma: PrismaService) {}
 
+  async findByTelegramId(telegramId: string): Promise<TelegramUser | null> {
+    return this.prisma.telegramUser.findUnique({
+      where: { telegramId },
+    });
+  }
+
   async upsertFromContext(ctx: Context) {
     const from = ctx.from;
     if (!from) return null;
 
     const id = BigInt(from.id);
+    const telegramId = String(from.id);
     const username = from.username ?? null;
 
     const tsSeconds = ctx.message?.date ?? ctx.callbackQuery?.message?.date;
@@ -26,24 +33,51 @@ export class TelegramUserService {
         where: { id },
         update: {
           username,
+          telegramId,
           status: UserStatus.ACTIVE,
           isActive: true,
           lastActiveAt: now,
         },
         create: {
           id,
+          telegramId,
           username,
           joinedAt,
           status: UserStatus.ACTIVE,
-          role: UserRole.USER,
+          role: telegramId === process.env.SUPERADMIN_ID ? UserRole.SUPERADMIN : UserRole.USER,
           isActive: true,
           lastActiveAt: now,
         },
       });
+
+       if (telegramId === process.env.SUPERADMIN_ID) {
+      user.role = UserRole.SUPERADMIN;
+    }
       return user;
     } catch (e) {
       this.logger.error('Failed to upsert Telegram user', e as Error);
       throw e;
+    }
+  }
+
+  async setRole(
+    telegramId: string,
+    newRole: UserRole,
+  ): Promise<TelegramUser | null> {
+    try {
+      return this.prisma.telegramUser.update({
+        where: { telegramId },
+        data: { role: newRole },
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2025'
+      ) {
+        this.logger.warn(`User with ID ${telegramId} not found.`);
+        return null;
+      }
+      throw error;
     }
   }
 

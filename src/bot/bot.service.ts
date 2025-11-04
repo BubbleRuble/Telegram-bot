@@ -7,8 +7,10 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { TelegramSessionService } from 'src/sessions/telegram-sessions.service';
 import { TelegramUserService } from 'src/users/telegram-user.service';
-import { Context, Telegraf} from 'telegraf';
-import { BOT_COMMANDS, registerBotCommands } from './bot.commands';
+import { Context, Telegraf, Markup, MiddlewareFn} from 'telegraf';
+import { BOT_COMMANDS, BotCommandsService } from './bot.commands';
+import { UserRole } from '@prisma/client';
+
 
 @Injectable()
 export class BotService implements OnModuleDestroy {
@@ -20,6 +22,7 @@ export class BotService implements OnModuleDestroy {
     private configService: ConfigService,
     private readonly telegramUserService: TelegramUserService,
     private readonly telegramSessionService: TelegramSessionService,
+    private readonly botCommands: BotCommandsService,
   ) {
     const token = this.configService.get('TELEGRAM_BOT_TOKEN');
     console.log('TELEGRAM_BOT_TOKEN:', token);
@@ -31,8 +34,6 @@ export class BotService implements OnModuleDestroy {
     }
 
     this.bot = new Telegraf(token as string);
-
-    registerBotCommands(this.bot);
 
     this.bot.use((ctx, next) => {
       this.logger.log(`Update received from chat: ${ctx.chat?.id}`);
@@ -49,6 +50,8 @@ export class BotService implements OnModuleDestroy {
         });
       return next();
     });
+    
+    this.botCommands.register(this.bot); 
 
     this.bot.command('lang', async (ctx) => {
       const text =

@@ -14,8 +14,9 @@ enum UserStatus {
 }
 
 enum UserRole {
-  USER
+  USER 
   ADMIN
+  SUPERADMIN
 }
 
 enum AppRole {
@@ -25,44 +26,44 @@ enum AppRole {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
+  id           String    @id @default(cuid())
+  email        String    @unique
   passwordHash String
   name         String?
-  role         AppRole  @default(USER)
-  isActive     Boolean  @default(true)
+  role         AppRole   @default(USER)
+  isActive     Boolean   @default(true)
   lastLoginAt  DateTime?
   lastLogoutAt DateTime?
 
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
+  refreshTokens RefreshToken[]
 
   @@index([role])
   @@index([isActive])
-
-  refreshTokens RefreshToken[]
 }
 
 model TelegramUser {
-  id        BigInt     @id 
-  username  String?    @unique
-  joinedAt  DateTime   @default(now())
-  status    UserStatus @default(ACTIVE)
-  role      UserRole   @default(USER)
-  isActive  Boolean    @default(true)
-  lastActiveAt DateTime @default(now())
+  id            BigInt     @id
+  telegramId    String     @unique
+  username      String?    @unique
+  joinedAt      DateTime   @default(now())
+  status        UserStatus @default(ACTIVE)
+  role          UserRole   @default(USER)
+  isActive      Boolean    @default(true)
+  lastActiveAt  DateTime   @default(now())
   deactivatedAt DateTime?
 
-  isBlocked   Boolean   @default(false)
-  blockedAt   DateTime?
-  unblockedAt DateTime?
+  isBlocked     Boolean   @default(false)
+  blockedAt     DateTime?
+  unblockedAt   DateTime?
   blockedReason String?
 
-  sessions  TelegramSession[]
+  sessions TelegramSession[]
 
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([username])
   @@index([isActive, updatedAt])
@@ -71,15 +72,15 @@ model TelegramUser {
 }
 
 model TelegramSession {
-  id               BigInt   @id @default(autoincrement())
-  userId           BigInt
-  chatId           BigInt
-  language         String?  @db.VarChar(10)
-  preferences      Json?
+  id                BigInt   @id @default(autoincrement())
+  userId            BigInt
+  chatId            BigInt
+  language          String?  @db.VarChar(10)
+  preferences       Json?
   lastInteractionAt DateTime @default(now())
 
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   user TelegramUser @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -88,12 +89,12 @@ model TelegramSession {
 }
 
 model RefreshToken {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   userId      String
-  hashedToken String   @unique
+  hashedToken String    @unique
   expiresAt   DateTime
   revokedAt   DateTime?
-  createdAt   DateTime @default(now())
+  createdAt   DateTime  @default(now())
   userAgent   String?
   ip          String?
 
