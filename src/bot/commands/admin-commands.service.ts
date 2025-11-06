@@ -16,10 +16,7 @@ export class AdminCommandsService {
   public register(bot: Telegraf<Context>) {
     this.logger.log('Registering admin/superadmin commands...');
 
-    bot.command(
-      'promote',
-      this.roleCheckService.superAdminOnly,
-      async (ctx) => {
+    bot.command('promote',this.roleCheckService.superAdminOnly,async (ctx) => {
         const fromId = ctx.from?.id;
         const text =
           (ctx.message && 'text' in ctx.message ? ctx.message.text : '') || '';

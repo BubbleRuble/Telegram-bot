@@ -1,7 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Telegraf, Context } from 'telegraf';
 import { TelegramSessionService } from 'src/sessions/telegram-sessions.service';
-import { RoleCheckService } from '../utils/role-check.service';
 import { showSuperAdminMenu,showAdminMenu, showUserMenu, sendMenu } from '../utils/keyboards.service'
 import { TelegramUserService } from 'src/users/telegram-user.service';
 import { UserRole } from '@prisma/client';
@@ -13,7 +12,6 @@ export class BaseCommandsService {
   constructor(
     private readonly telegramSessionService: TelegramSessionService,
     private readonly telegramUserService: TelegramUserService,
-    private readonly roleCheckService: RoleCheckService,
   ) {}
 
   public register(bot: Telegraf<Context>) {
@@ -30,10 +28,6 @@ export class BaseCommandsService {
       await ctx.reply('❌ Ви ще не зареєстровані в системі.');
       return;
     }
-    
-
-      const isSuperAdmin = await this.roleCheckService.isSuperAdmin(ctx);
-      const isAdmin = await this.roleCheckService.isAdmin(ctx);
 
     switch (user.role) {
       case UserRole.SUPERADMIN:

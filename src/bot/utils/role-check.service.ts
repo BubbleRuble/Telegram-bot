@@ -9,7 +9,6 @@ export class RoleCheckService {
 
   constructor(private readonly telegramUserService: TelegramUserService) {}
 
-
   public async getRole(ctx: Context): Promise<UserRole | null> {
     const fromId = ctx.from?.id;
     if (!fromId) return null;
@@ -22,7 +21,6 @@ export class RoleCheckService {
       return null;
     }
   }
-
  
   public async isSuperAdmin(ctx: Context): Promise<boolean> {
     const role = await this.getRole(ctx);

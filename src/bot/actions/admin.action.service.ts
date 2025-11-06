@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Telegraf, Context } from 'telegraf';
 import { PrismaService } from '../../prisma/prisma.service';
+import { UserRole } from '@prisma/client';
 import { RoleCheckService } from '../utils/role-check.service';
 
 @Injectable()
@@ -15,29 +16,47 @@ export class AdminActionsService {
   public register(bot: Telegraf<Context>) {
     this.logger.log('Registering admin/superadmin actions...');
 
+    //STATS
+
     bot.action('ADMIN_STATS', this.roleCheckService.adminOnly, async (ctx) => {
       try {
         await ctx.answerCbQuery('📊 Collecting stats...');
+        const chatId = ctx.chat?.id;
 
-        const totalUsers = await this.prisma.telegramUser.count();
-        const activeUsers = await this.prisma.telegramUser.count({
-          where: { isActive: true },
+        const sessions = await this.prisma.telegramSession.findMany({
+          where: { chatId },
+          include: { user: true },
         });
-        const blockedUsers = await this.prisma.telegramUser.count({
-          where: { isBlocked: true },
-        });
+
+        const totalUsers = sessions.length;
+        const admins = sessions.filter(
+          (s) => s.user.role === UserRole.ADMIN,
+        ).length;
+        const blockedUsers = sessions.filter((s) => s.user.isBlocked).length;
+        const activeUsers = sessions.filter((s) => s.user.isActive).length;
+
         const lastActiveUser = await this.prisma.telegramUser.findFirst({
           orderBy: { lastActiveAt: 'desc' },
           select: { username: true, lastActiveAt: true },
         });
 
-        const statsMessage = `
-📊 *Bot Statistics*
+        const formattedDate = new Date(
+          lastActiveUser?.lastActiveAt ?? Date.now(),
+        ).toLocaleString('en-US', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+        });
+
+        const statsMessage = `📊 *Bot Statistics*
 👥 Total users: *${totalUsers}*
+👑 Admins: *${admins}*
 🟢 Active users: *${activeUsers}*
 🚫 Blocked users: *${blockedUsers}*
-🕒 Last activity: *${lastActiveUser?.lastActiveAt.toLocaleString('uk-UA')}* 👤 Last active user: *${lastActiveUser?.username ?? 'Unknown'}*
-        `;
+🕒 Last activity: *${formattedDate}*`;
 
         await ctx.replyWithMarkdownV2(statsMessage);
       } catch (err) {
@@ -65,7 +84,7 @@ export class AdminActionsService {
 
           const users = await this.prisma.telegramUser.findMany({
             select: { telegramId: true, username: true, role: true },
-            orderBy: { role: 'desc' }, 
+            orderBy: { role: 'desc' },
           });
 
           const lines = users
@@ -78,7 +97,7 @@ export class AdminActionsService {
             .join('\n');
 
           await ctx.replyWithMarkdownV2(
-            `🛠️ *User List (by ID):*\n\n${lines}\n\n` +
+            `🛠️ *User List by ID:*\n\n${lines}\n\n` +
               `\nВикористайте команди:\n\`/promote <telegramId>\`\n\`/demote <telegramId>\``,
           );
         } catch (err) {
